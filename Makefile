@@ -7,7 +7,9 @@ PROGS = SUPSHAD SSOFF $(TESTPROGS)
 
 INFS = $(addsuffix .inf,$(PROGS))
 
-all: bin/supershadow.rom dnfs/supdnfs.rom $(addprefix bin/,$(PROGS) $(INFS))
+all: bin/supershadow.rom $(addprefix bin/,$(PROGS) $(INFS))
+
+#dnfs/supdnfs.rom 
 
 TARG = ../serial/serialfs/storage/DEFAULT
 
@@ -15,6 +17,19 @@ DEPLOYS = $(addprefix $(TARG)/,$(PROGS) $(INFS))
 
 deploy: $(DEPLOYS)
 
+ssd: all
+	dfs form -80 supershadow.ssd
+	dfs title supershadow.ssd supershadow
+	dfs add supershadow.ssd $(addprefix bin/,$(INFS))
+	dfs add -e 0xFF8000 -l 0xFF8000 -f "R.SUPERS" supershadow.ssd bin/supershadow.rom
+
+hostfs: ssd
+	mkdir -p ~/hostfs/supershadow
+	dfs read -i -d ~/hostfs/supershadow supershadow.ssd
+
+
+clean:
+	-rm -f bin/*
 
 bin/SUPSHAD labels/supshad.labels: $(SOURCES)
 	xa -o bin/SUPSHAD src/main.s -I src -DSTANDALONE -l labels/supshad.labels
@@ -41,6 +56,11 @@ burn: bin/supershadow.rom
 $(TARG)/% : bin/%
 	cp $< $@
 
+
+bin/SSTEST.inf:bin/SSTEST
+bin/SSTESTX.inf:bin/SSTESTX
+bin/SSTEST2.inf:bin/SSTEST2
+bin/SSOFF.inf:bin/SSOFF
 
 bin/SSTEST: testsrc/test.s
 	xa -o $@ $<
